@@ -59,23 +59,27 @@
   (map (fn [p gb lb] (+ p (* c (/ (- (+ gb lb) (* 2 p)) 3))))
        position gb-position lb-position))
 
-(defn move [velocity particle']
-  ;keep particles in the problem space!
-  (map (fn [v p'] (+ (* w v) p')) velocity particle'))
+(defn move [space velocity particle']
+  (map (fn [[smin smax] v p']
+         (let [n-pos (+ (* w v) p')]
+           (if (or (< n-pos smin) (> n-pos smax))
+             (+ (* w (* -0.5 v)))
+             n-pos)))
+       space velocity particle'))
 
 (defn velocity [position position' p-velocity]
   (map (fn [p p' pv]
          (- (+ p' (* w pv)) p))
        position position' p-velocity))
 
-(defn update-particle [particle global-best local-best fitness-fn]
+(defn update-particle [space particle global-best local-best fitness-fn]
   (let [[_ p-velocity position] particle
         [_ _ gb-position] global-best
         [_ _ lb-position] local-best
         g (gravity position gb-position lb-position)
         [_ _ position'] (random-particle (hypersphere g position))
         n-velocity (velocity position position' p-velocity)
-        n-position (move n-velocity position')]
+        n-position (move space n-velocity position')]
     [(fitness-fn n-position) n-velocity n-position]))
 
 ;each particle looks like [fitness velocity position]
@@ -83,11 +87,18 @@
   (update-fitness (repeatedly particle-count #(random-particle space))
                   fitness-fn))
 
-(defn pso [swarm fitness-goal fitness-fn max-iter]
+(defn draw-chart [swarm]
+  ;need to make an easy way to get rid of these ...
+  (doto (icharts/scatter-plot (map #(first (last %)) swarm)
+                              (map #(last (last %)) swarm))
+    i/view))
+
+(defn pso [space swarm fitness-goal fitness-fn max-iter & {:keys [chart?]}]
   (loop [swarm swarm
          iter 0]
     (let [global-best (best swarm)
           [fitness _ _] global-best]
+      (if chart? (draw-chart swarm))
       (if (or (<= (Math/abs fitness) fitness-goal)
               (> iter max-iter))
         (best swarm)
@@ -95,7 +106,7 @@
           (map (fn [index particle]
                  (let [neighborhood (neighborhood-swarm index swarm)
                        local-best (best neighborhood)]
-                   (update-particle particle global-best
+                   (update-particle space particle global-best
                                     local-best fitness-fn)))
                (range 0 (count swarm)) swarm)
           (inc iter))))))
