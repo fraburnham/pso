@@ -2,8 +2,6 @@
   (:require [pso.core :as p]))
 
 (defn move [space position velocity]
-  ;add the velocity to position
-  ;but trap it in space
   (map (fn [p v s]
          (cond (> p (last s)) (last s)
                (< p (first s)) (first s)
@@ -11,15 +9,13 @@
        position velocity space))
 
 (defn velocity [speed destination]
-  ;avg the global and local optima to use as destination
-  ;multiply destination by speed
   (map (partial * speed) destination))
 
 (defn update-particle [space speed particle global-best local-best fitness-fn]
   (let [[_ _ position] particle
         [_ _ gb-position] global-best
-        [_ _ lb-position] local-best #_local-best
-        destination (map (partial * 0.5) (map + gb-position lb-position))
+        [_ _ lb-position] local-best
+        destination (map (partial * speed) (map + gb-position lb-position))
         velocity (velocity speed destination) ;only storing this for continuity, should switch to maps...
         n-position (move space position velocity)]
     [(fitness-fn n-position) velocity n-position]))
