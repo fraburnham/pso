@@ -3,20 +3,21 @@
 
 (defn move [space position velocity]
   (map (fn [p v s]
-         (cond (> p (last s)) (p/random (first s) (last s))
-               (< p (first s)) (p/random (first s) (last s))
-               :else (+ p v)))
+         (let [p (+ p v)]
+           (cond (> p (last s)) (p/random (first s) (last s))
+                 (< p (first s)) (p/random (first s) (last s))
+                 :else p)))
        position velocity space))
-
-(defn velocity [speed destination]
-  (map (partial * speed) destination))
 
 (defn update-particle [space speed particle global-best local-best fitness-fn]
   (let [[_ _ position] particle
         [_ _ gb-position] global-best
         [_ _ lb-position] local-best
-        destination (map (partial * speed) (map + gb-position lb-position))
-        velocity (velocity speed destination) ;only storing this for continuity, should switch to maps...
+        [_ _ rand-position] (p/random-particle space)
+        velocity (map (partial * speed)
+                      (map #(+ (* 0.75 %1) (* 0.2 %2) (* 0.05 %3))
+                           gb-position lb-position rand-position))
+        ;only storing this for continuity, should switch to maps...
         n-position (move space position velocity)]
     [(fitness-fn n-position) velocity n-position]))
 
@@ -33,7 +34,7 @@
           (map (fn [index particle]
                  (let [neighborhood (p/neighborhood-swarm index swarm)
                        local-best (p/best neighborhood)]
-                   (update-particle space speed particle global-best
-                                    local-best fitness-fn)))
+                   (update-particle space speed particle
+                                    global-best local-best fitness-fn)))
                (range 0 (count swarm)) swarm)
           (inc iter))))))

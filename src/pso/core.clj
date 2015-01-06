@@ -75,7 +75,7 @@
 (defn update-particle [space particle global-best local-best fitness-fn]
   (let [[_ p-velocity position] particle
         [_ _ gb-position] global-best
-        [_ _ lb-position] global-best #_local-best
+        [_ _ lb-position] local-best
         g (gravity position gb-position lb-position)
         [_ _ position'] (random-particle (hypercube g position))
         n-velocity (velocity position position' p-velocity)
