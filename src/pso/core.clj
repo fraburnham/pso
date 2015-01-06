@@ -6,6 +6,9 @@
 ;algo from
 ;Maurice Clerc. Standard Particle Swarm Optimisation. 15 pages. 2012. <hal-00764996>
 
+(def chart (atom (icharts/scatter-plot 0 0 :title "Error vs Iterations")))
+(def i (atom 1))
+
 ;some constants used by the algorithm
 (def c (+ 0.5 (Math/log 2)))
 (def w (/ 1 (* 2 (Math/log 2))))
@@ -41,7 +44,8 @@
 ;the goal is to find the particle with an error (or fitness) of zero (not 1)
 ;to use as local best make a swarm of the neighborhood
 (defn best [swarm] ;modify this to sort to closest to zero
-  (first (sort-by first (distance-to-zero) swarm)))
+  (let [best (first (sort-by first (distance-to-zero) swarm))]
+    best))
 
 (defn neighborhood-swarm [index swarm]
   (let [c (count swarm)]
@@ -87,18 +91,20 @@
   (update-fitness (repeatedly particle-count #(random-particle space))
                   fitness-fn))
 
-(defn draw-chart [swarm]
+(defn draw-chart [fitness]
   ;need to make an easy way to get rid of these ...
-  (doto (icharts/scatter-plot (map #(first (last %)) swarm)
+  #_(doto (icharts/scatter-plot (map #(first (last %)) swarm)
                               (map #(last (last %)) swarm))
-    i/view))
+    i/view)
+  (icharts/add-points @chart [@i] [fitness])
+  (swap! i inc))
 
 (defn pso [space swarm fitness-goal fitness-fn max-iter & {:keys [chart?]}]
   (loop [swarm swarm
          iter 0]
     (let [global-best (best swarm)
           [fitness _ _] global-best]
-      (if chart? (draw-chart swarm))
+      (if chart? (draw-chart fitness))
       (if (or (<= (Math/abs fitness) fitness-goal)
               (> iter max-iter))
         (best swarm)
