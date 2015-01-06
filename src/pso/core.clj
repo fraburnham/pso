@@ -51,7 +51,7 @@
 
 ;not accurate way to generate a hypersphere
 ;gives bounds for a particle either way
-(defn hypersphere [center position]
+(defn hypercube [center position]
   (let [radius (map (fn [c p] (Math/abs (- c p))) center position)]
     (map (fn [c r] [(- c r) (+ c r)]) center radius)))
 
@@ -75,9 +75,9 @@
 (defn update-particle [space particle global-best local-best fitness-fn]
   (let [[_ p-velocity position] particle
         [_ _ gb-position] global-best
-        [_ _ lb-position] local-best
+        [_ _ lb-position] global-best #_local-best
         g (gravity position gb-position lb-position)
-        [_ _ position'] (random-particle (hypersphere g position))
+        [_ _ position'] (random-particle (hypercube g position))
         n-velocity (velocity position position' p-velocity)
         n-position (move space n-velocity position')]
     [(fitness-fn n-position) n-velocity n-position]))
