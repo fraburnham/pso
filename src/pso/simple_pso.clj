@@ -3,8 +3,8 @@
 
 (defn move [space position velocity]
   (map (fn [p v s]
-         (cond (> p (last s)) (last s)
-               (< p (first s)) (first s)
+         (cond (> p (last s)) (p/random (first s) (last s))
+               (< p (first s)) (p/random (first s) (last s))
                :else (+ p v)))
        position velocity space))
 
